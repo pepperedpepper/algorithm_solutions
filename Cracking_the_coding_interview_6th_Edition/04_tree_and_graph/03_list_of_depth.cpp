@@ -1,53 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include "Header.h"
 using namespace std;
 
 // 4.3 List of Depths:
 // Given a binary tree, design an algorithm which creates a linked list of all the nodes at each depth
 // (e.g., if you have a tree with depth D, you'll have D linked lists).
 
-
-struct Node
-{
-    int data;
-    Node * left;
-    Node * right;
-};
-
-Node * makeBST(vector<int>& arr, int start, int end)
-{
-    if (start > end) return nullptr;
-
-    int mid = (start + end) / 2;
-    
-    Node * newNode = new Node;
-    newNode->data = arr[mid];
-    newNode->left = makeBST(arr, start, mid - 1);
-    newNode->right = makeBST(arr, mid + 1, end);
-    
-    return newNode;
-}
-
-void printTree(Node *root, string indent = "", bool last = true)
-{
-    if (root == nullptr) return;
-
-    cout << indent;
-    if (last)
-    {
-        cout << "R----";
-        indent += "   ";
-    }
-    else
-    {
-        cout << "L----";
-        indent += "|  ";
-    }
-    cout << root->data << endl;
-    printTree(root->left, indent, false);
-    printTree(root->right, indent, true);
-}
 
 void createLevelLinkedLists(Node * curNode, vector<list<Node *>>& lists, int level)
 {
@@ -85,11 +45,11 @@ void printLinkedLists(vector<list<Node *>>& lists)
 
 int main()
 {
-    vector<int> arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    Node * root = makeBST(arr, 0, 9);
-    printTree(root);
+    Tree tree;
+    tree.makeSampleBST(10);
+    tree.printTree(tree.root);
     
     vector<list<Node *>> lists;
-    createLevelLinkedLists(root, lists, 0);
+    createLevelLinkedLists(tree.root, lists, 0);
     printLinkedLists(lists);
 }
