@@ -40,11 +40,12 @@ struct Vector
 {
     float x, y;
     
-    Vector(float x, float y)
-    {
-        this->x = x;
-        this->y = y;
-    }
+    Vector(float _x, float _y) : x(_x), y(_y) {}
+};
+
+struct Triangle
+{
+    Point p1, p2, p3;
 };
 
 
@@ -168,6 +169,22 @@ bool lineRectangle(Line l, Rectangle r)
     bool right  = lineLine(l, Line(Point(r.lt.x + r.w, r.lt.y), Point(r.lt.x + r.w, r.lt.y + r.h)));
     
     return (left || right || top || bottom);
+}
+
+float getTriangleArea(Point a, Point b, Point c)
+{
+    // Heron's formula
+    return abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y));
+}
+
+bool trianglePoint(Triangle t, Point p)
+{
+    float triangleArea = getTriangleArea(t.p1, t.p2, t.p3);
+    float t1Area = getTriangleArea(t.p1, t.p2, p);
+    float t2Area = getTriangleArea(t.p1, t.p3, p);
+    float t3Area = getTriangleArea(t.p2, t.p3, p);
+    
+    return triangleArea == t1Area + t2Area + t3Area;
 }
 
 
