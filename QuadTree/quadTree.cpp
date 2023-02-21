@@ -34,7 +34,7 @@ private:
     QuadTree* children[MAX];
     bool isActive = false;
     
-    void SetPos(Pos _min, Pos _max, ChildType type)
+    void SetPosition(Pos _min, Pos _max, ChildType type)
     {
         Pos halfSize = {(_max - _min) / 2};
         
@@ -46,7 +46,7 @@ private:
         else if (type == TR)
         {
             min = {_min.x + halfSize.x , _min.y};
-            max = _min + halfSize;
+            max = {_max.x, _max.y - halfSize.y};
         }
         else if (type == BL)
         {
@@ -78,6 +78,11 @@ private:
         return true;
     }
     
+    bool CheckCollision(int minX, int minY, int maxX, int maxY)
+    {
+        return (min.x <= maxX) && (minX <= max.x) && (min.y <= maxY) && (minY <= max.y);
+    }
+    
 public:
     QuadTree(int minX, int minY, int maxX, int maxY)
     {
@@ -91,7 +96,7 @@ public:
     
     QuadTree(Pos _min, Pos _max, ChildType type)
     {
-        SetPos(_min, _max, type);
+        SetPosition(_min, _max, type);
     }
     
     void Build()
@@ -103,7 +108,27 @@ public:
         }
     }
     
-    void ActiveIfContains(int x, int y)
+    void ActiveChildByPosition(int x, int y)
+    {
+        if (x < min.x || y < min.y || x > max.x || y > max.y)
+        {
+            cout << "The position is beyond the map" << endl;
+            return;
+        }
+        
+        if (CanDivide() == false)
+        {
+            isActive = true;
+            return;
+        }
+        
+        if      (x < center.x  && y < center.y)  children[TL]->ActiveChildByPosition(x, y);
+        else if (x >= center.x && y < center.y)  children[TR]->ActiveChildByPosition(x, y);
+        else if (x < center.x  && y >= center.y) children[BL]->ActiveChildByPosition(x, y);
+        else                                     children[BR]->ActiveChildByPosition(x, y);
+    }
+    
+    void ActiveChildrenByBoundary(int minX, int minY, int maxX, int maxY)
     {
         if (CanDivide() == false)
         {
@@ -111,21 +136,27 @@ public:
             return;
         }
         
-        if      (x < center.x  && y < center.y)  children[TL]->ActiveIfContains(x, y);
-        else if (x >= center.x && y < center.y)  children[TR]->ActiveIfContains(x, y);
-        else if (x < center.x  && y >= center.y) children[BL]->ActiveIfContains(x, y);
-        else                                     children[BR]->ActiveIfContains(x, y);
+        if (children[TL]->CheckCollision(minX, minY, maxX, maxY))
+            children[TL]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
+        if (children[TR]->CheckCollision(minX, minY, maxX, maxY))
+            children[TR]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
+        if (children[BL]->CheckCollision(minX, minY, maxX, maxY))
+            children[BL]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
+        if (children[BR]->CheckCollision(minX, minY, maxX, maxY))
+            children[BR]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
     }
     
-    void Print()
+    void PrintActivatedChild()
     {
-        cout << ((isActive == true) ? "TRUE " : "FALSE ");
-        cout << "( " << min.x << ", " << min.y << " ) ~ ( " << max.x << ", " << max.y << " ) " << endl;
+        if (isActive)
+        {
+            cout << "( " << min.x << ", " << min.y << " ) ~ ( " << max.x << ", " << max.y << " ) " << " : " << max.x - min.x << ", " << max.y - min.y << endl;
+        }
         
         if (CanDivide())
         {
             for (int i = 0; i < MAX; i++)
-                children[i]->Print();
+                children[i]->PrintActivatedChild();
         }
     }
 };
@@ -136,6 +167,6 @@ int main()
     
     QuadTree qt(0, 0, mapSize, mapSize);
     qt.Build();
-    qt.ActiveIfContains(2, 2);
-    qt.Print();
+    qt.ActiveChildrenByBoundary(2, 2, 5, 5);
+    qt.PrintActivatedChild();
 }
