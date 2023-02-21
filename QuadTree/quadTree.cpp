@@ -1,31 +1,33 @@
 #include <iostream>
 using namespace std;
 
+
+struct Pos
+{
+    float x, y;
+    
+    Pos operator+(const Pos p)
+    {
+        return {x + p.x, y + p.y};
+    }
+    
+    Pos operator-(const Pos p)
+    {
+        return {x - p.x, y - p.y};
+    }
+    
+    Pos operator/(int dv)
+    {
+        return {x / dv, y / dv};
+    }
+};
+
+
 class QuadTree
 {
 private:
     static const int TERMINAL_MAP_SIZE = 1;
-    
-    struct Pos
-    {
-        float x, y;
-        
-        Pos operator+(const Pos p)
-        {
-            return {x + p.x, y + p.y};
-        }
-        
-        Pos operator-(const Pos p)
-        {
-            return {x - p.x, y - p.y};
-        }
-        
-        Pos operator/(int dv)
-        {
-            return {x / dv, y / dv};
-        }
-    };
-    
+
     enum ChildType { TL, TR, BL, BR, MAX };
     // TopLeft(TL)    TopRight(TR)
     // BottomLeft(BL) BottomRight(BR)
@@ -62,6 +64,11 @@ private:
         center.x = min.x + (max.x - min.x) / 2;
         center.y = min.y + (max.y - min.y) / 2;
     }
+    
+    bool CheckCollision(Pos _min, Pos _max)
+    {
+        return (min.x <= _max.x) && (_min.x <= max.x) && (min.y <= _max.y) && (_min.y <= max.y);
+    }
 
     bool CanDivide()
     {
@@ -78,22 +85,8 @@ private:
         return true;
     }
     
-    bool CheckCollision(int minX, int minY, int maxX, int maxY)
-    {
-        return (min.x <= maxX) && (minX <= max.x) && (min.y <= maxY) && (minY <= max.y);
-    }
-    
 public:
-    QuadTree(int minX, int minY, int maxX, int maxY)
-    {
-        min.x = minX;
-        min.y = minY;
-        max.x = maxX;
-        max.y = maxY;
-        center.x = minX + (maxX - minX) / 2;
-        center.y = minY + (maxY - minY) / 2;
-    }
-    
+    QuadTree(Pos _min, Pos _max) : min(_min), max(_max), center(min + (max - min) / 2) {};
     QuadTree(Pos _min, Pos _max, ChildType type)
     {
         SetPosition(_min, _max, type);
@@ -108,7 +101,7 @@ public:
         }
     }
     
-    void ActiveChildByPosition(int x, int y)
+    void ActiveChildByPosition(float x, float y)
     {
         if (x < min.x || y < min.y || x > max.x || y > max.y)
         {
@@ -122,13 +115,13 @@ public:
             return;
         }
         
-        if      (x < center.x  && y < center.y)  children[TL]->ActiveChildByPosition(x, y);
-        else if (x >= center.x && y < center.y)  children[TR]->ActiveChildByPosition(x, y);
-        else if (x < center.x  && y >= center.y) children[BL]->ActiveChildByPosition(x, y);
-        else                                     children[BR]->ActiveChildByPosition(x, y);
+        if      (x < center.x  && y < center.y) children[TL]->ActiveChildByPosition(x, y);
+        else if (x > center.x && y < center.y)  children[TR]->ActiveChildByPosition(x, y);
+        else if (x < center.x  && y > center.y) children[BL]->ActiveChildByPosition(x, y);
+        else                                    children[BR]->ActiveChildByPosition(x, y);
     }
     
-    void ActiveChildrenByBoundary(int minX, int minY, int maxX, int maxY)
+    void ActiveChildrenByBoundary(Pos _min, Pos _max)
     {
         if (CanDivide() == false)
         {
@@ -136,14 +129,9 @@ public:
             return;
         }
         
-        if (children[TL]->CheckCollision(minX, minY, maxX, maxY))
-            children[TL]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
-        if (children[TR]->CheckCollision(minX, minY, maxX, maxY))
-            children[TR]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
-        if (children[BL]->CheckCollision(minX, minY, maxX, maxY))
-            children[BL]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
-        if (children[BR]->CheckCollision(minX, minY, maxX, maxY))
-            children[BR]->ActiveChildrenByBoundary(minX, minY, maxX, maxY);
+        for (int i = 0; i < MAX; i++)
+            if (children[i]->CheckCollision(_min, _max))
+                children[i]->ActiveChildrenByBoundary(_min, _max);
     }
     
     void PrintActivatedChild()
@@ -163,10 +151,15 @@ public:
 
 int main()
 {
-    int mapSize = 10;
+    Pos min = {0, 0};
+    Pos max = {10, 10};
     
-    QuadTree qt(0, 0, mapSize, mapSize);
+    QuadTree qt(min, max);
     qt.Build();
-    qt.ActiveChildrenByBoundary(2, 2, 5, 5);
+    
+    Pos myMin = {2, 2};
+    Pos myMax = {5, 5};
+    
+    qt.ActiveChildrenByBoundary(myMin, myMax);
     qt.PrintActivatedChild();
 }
