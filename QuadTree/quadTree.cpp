@@ -85,22 +85,6 @@ private:
         return true;
     }
     
-public:
-    QuadTree(Pos _min, Pos _max) : min(_min), max(_max), center(min + (max - min) / 2) {};
-    QuadTree(Pos _min, Pos _max, ChildType type)
-    {
-        SetPosition(_min, _max, type);
-    }
-    
-    void Build()
-    {
-        if (DivideByFour())
-        {
-            for (int i = 0; i < MAX; i++)
-                children[i]->Build();
-        }
-    }
-    
     void ActiveChildByPosition(float x, float y)
     {
         if (x < min.x || y < min.y || x > max.x || y > max.y)
@@ -134,18 +118,46 @@ public:
                 children[i]->ActiveChildrenByBoundary(_min, _max);
     }
     
-    void PrintActivatedChild()
+    void PrintHelpter()
     {
-        if (isActive)
+        if (CanDivide() == false)
         {
-            cout << "( " << min.x << ", " << min.y << " ) ~ ( " << max.x << ", " << max.y << " ) " << " : " << max.x - min.x << ", " << max.y - min.y << endl;
+            if (isActive)
+                cout << "( " << min.x << ", " << min.y << " ) ~ ( " << max.x << ", " << max.y << " ) " << " : " << max.x - min.x << ", " << max.y - min.y << endl;
+            return;
         }
         
-        if (CanDivide())
+        for (int i = 0; i < MAX; i++)
+            children[i]->PrintHelpter();
+    }
+    
+public:
+    QuadTree(Pos _min, Pos _max) : min(_min), max(_max), center(min + (max - min) / 2) {};
+    QuadTree(Pos _min, Pos _max, ChildType type)
+    {
+        SetPosition(_min, _max, type);
+    }
+    
+    void Build()
+    {
+        if (DivideByFour())
         {
             for (int i = 0; i < MAX; i++)
-                children[i]->PrintActivatedChild();
+                children[i]->Build();
         }
+    }
+    
+    void Active(Pos _min, Pos _max)
+    {
+        cout << "Active this boundary : " << endl;
+        cout << "( " << _min.x << ", " << _min.y << " ) ~ ( " << _max.x << ", " << _max.y << " ) " << endl;
+        ActiveChildrenByBoundary(_min, _max);
+    }
+    
+    void Print()
+    {
+        cout << "Print : " << endl;
+        PrintHelpter();
     }
 };
 
@@ -160,6 +172,6 @@ int main()
     Pos myMin = {2, 2};
     Pos myMax = {5, 5};
     
-    qt.ActiveChildrenByBoundary(myMin, myMax);
-    qt.PrintActivatedChild();
+    qt.Active(myMin, myMax);
+    qt.Print();
 }
